@@ -8,48 +8,38 @@ const merchantId = process.env.PHONEPE_MERCHANT_ID;
 const salt = process.env.PHONEPE_SALT;
 const saltIndex = process.env.PHONEPE_SALT_INDEX;
 
-const PAYLINK_API_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/paylink/create";
-const PAYLINK_URI_PATH = "/pg/v1/paylink/create";
+// 👉 PG PAY URL (NOT PAYLINK!)
+const API_URL = "https://api.phonepe.com/apis/hermes/pg/v1/pay";
+const API_PATH = "/pg/v1/pay";
 
 export const initiatePhonePePayment = async (payload) => {
-  const data = {
-    merchantId,
-    merchantTransactionId: payload.merchantTransactionId,
-    merchantUserId: payload.merchantUserId,
-    amount: payload.amount,
-    redirectUrl: payload.redirectUrl,
-    callbackUrl: payload.callbackUrl,
-    paymentInstrument: {
-      type: "PAY_PAGE"
-    }
-  };
+  const base64 = Buffer.from(JSON.stringify(payload)).toString("base64");
 
-  const jsonPayload = JSON.stringify(data);
-  const base64Data = Buffer.from(jsonPayload).toString("base64");
+  const hashString = base64 + API_PATH + salt;
 
-  const stringToHash = base64Data + PAYLINK_URI_PATH + salt;
-  const xVerify =
-    crypto.createHash("sha256").update(stringToHash).digest("hex") +
-    "###" +
-    saltIndex;
+  const sha256 = crypto
+    .createHash("sha256")
+    .update(hashString)
+    .digest("hex");
+
+  const xVerify = sha256 + "###" + saltIndex;
 
   try {
     const response = await axios.post(
-      PAYLINK_API_URL,
-      { request: base64Data },
+      API_URL,
+      { request: base64 },
       {
         headers: {
           "Content-Type": "application/json",
           "X-VERIFY": xVerify,
-          "X-MERCHANT-ID": merchantId,
+          "X-MERCHANT-ID": merchantId
         }
       }
     );
 
     return response.data;
-
   } catch (error) {
-    console.log("PhonePe API Error:", error.response?.data || error.message);
+    console.log("PhonePe PG Error:", error.response?.data || error.message);
     throw error;
   }
 };
