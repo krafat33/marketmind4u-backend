@@ -1,58 +1,58 @@
-import axios from "axios";
-import crypto from "crypto";
-import dotenv from "dotenv";
+const axios = require("axios");
+const crypto = require("crypto");
 
-dotenv.config();
+const merchantId = "SU2511102050321902747037";
+const salt = "cd0bf18a-ec53-48a5-ace2-b23b3464d54b";
+const saltIndex = 1;
 
-const merchantId = process.env.PHONEPE_MERCHANT_ID;
-const salt = process.env.PHONEPE_SALT;
-const saltIndex = process.env.PHONEPE_SALT_INDEX;
-
-// 👉 Sandbox URL (Correct)
-const PAYLINK_API_URL =
-  "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/paylink/create";
-
-const PAYLINK_URI_PATH = "/apis/pg-sandbox/pg/v1/paylink/create";
-
-
-export const initiatePhonePePayment = async (payload) => {
-
-  const data = {
-    merchantId,
-    merchantTransactionId: payload.merchantTransactionId,
-    merchantUserId: payload.merchantUserId,
-    amount: payload.amount, // paise
-    redirectUrl: payload.redirectUrl,
-    callbackUrl: payload.callbackUrl,
-    paymentInstrument: {
-      type: "PAY_PAGE"
-    }
-  };
-
-  const jsonPayload = JSON.stringify(data);
-  const base64Data = Buffer.from(jsonPayload).toString("base64");
-
-  const stringToHash = base64Data + PAYLINK_URI_PATH + salt;
-  const xVerify =
-    crypto.createHash("sha256").update(stringToHash).digest("hex") +
-    "###" +
-    saltIndex;
-
+exports.createPayment = async (req, res) => {
   try {
+    const { amount, userId } = req.body;
+
+    const merchantTransactionId = "MM" + Date.now();
+
+    const payload = {
+      merchantId,
+      merchantTransactionId,
+      amount: amount * 100,
+      redirectUrl: `https://marketmind4u.com/payment?tid=${merchantTransactionId}`,
+      redirectMode: "REDIRECT",
+      callbackUrl: "https://marketmind4u-backend.onrender.com/api/payment/callback",
+      paymentInstrument: {
+        type: "PAY_PAGE"
+      }
+    };
+
+    const payloadString = JSON.stringify(payload);
+    const base64Payload = Buffer.from(payloadString).toString("base64");
+
+    const finalString = base64Payload + "/pg/v1/pay" + salt;
+    const sha256 = crypto.createHash("sha256").update(finalString).digest("hex");
+    const checksum = sha256 + "###" + saltIndex;
+
     const response = await axios.post(
-      PAYLINK_API_URL,
-      { request: base64Data },
+      "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay",
+      { request: base64Payload },
       {
         headers: {
           "Content-Type": "application/json",
-          "X-VERIFY": xVerify,
+          "X-VERIFY": checksum,
           "X-MERCHANT-ID": merchantId,
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    console.log("PhonePe API Error:", error.response?.data || error.message);
-    throw error;
+
+    return res.json({
+      success: true,
+      paymentUrl: response.data.data.instrumentResponse.redirectInfo.url,
+      merchantTransactionId,
+    });
+
+  } catch (err) {
+    console.log("Payment Error:", err.response?.data || err.message);
+    return res.status(500).json({
+      message: "Payment Error",
+      error: err.response?.data || err.message,
+    });
   }
 };
