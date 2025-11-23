@@ -13,13 +13,17 @@ const PAYLINK_API_URL = "https://api-preprod.phonepe.com/apis/hermes/pg/v1/payli
 const PAYLINK_URI_PATH = "/pg/v1/paylink/create";
 
 export const initiatePhonePePayment = async (payload) => {
+
   const data = {
     merchantId,
     merchantTransactionId: payload.merchantTransactionId,
     merchantUserId: payload.merchantUserId,
-    amount: payload.amount,
+    amount: payload.amount, // paise
     redirectUrl: payload.redirectUrl,
     callbackUrl: payload.callbackUrl,
+    paymentInstrument: {
+      type: "PAY_PAGE"
+    }
   };
 
   const jsonPayload = JSON.stringify(data);
@@ -45,7 +49,7 @@ export const initiatePhonePePayment = async (payload) => {
     );
     return response.data;
   } catch (error) {
-    console.error("PhonePe API Error Response:", error.response?.data || error.message);
+    console.log("PhonePe API Error:", error.response?.data || error.message);
     throw error;
   }
 };
