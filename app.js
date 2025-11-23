@@ -18,7 +18,7 @@ if (process.env.NODE_ENV !== "production") {
 connectDB();
 
 // Routes
-app.get("/", (req, res) => {
+app.get("/healthz", (req, res) => {
   res.send("MarketMind4U Backend Running...");
 });
 

@@ -9,8 +9,9 @@ const salt = process.env.PHONEPE_SALT;
 const saltIndex = process.env.PHONEPE_SALT_INDEX;
 
 // 👉 Sandbox URL (Correct)
-const PAYLINK_API_URL = "https://api-preprod.phonepe.com/apis/hermes/pg/v1/paylink/create";
+const PAYLINK_API_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/paylink/create";
 const PAYLINK_URI_PATH = "/pg/v1/paylink/create";
+
 
 export const initiatePhonePePayment = async (payload) => {
 
