@@ -8,18 +8,16 @@ const merchantId = process.env.PHONEPE_MERCHANT_ID;
 const salt = process.env.PHONEPE_SALT;
 const saltIndex = process.env.PHONEPE_SALT_INDEX;
 
-// Production PayLink API
-// Production
-const PAYLINK_API_URL = "https://api.phonepe.com/apis/hermes/pg/v1/paylink/create";
+// 👉 Sandbox URL (Correct)
+const PAYLINK_API_URL = "https://api-preprod.phonepe.com/apis/hermes/pg/v1/paylink/create";
 const PAYLINK_URI_PATH = "/pg/v1/paylink/create";
-
 
 export const initiatePhonePePayment = async (payload) => {
   const data = {
     merchantId,
     merchantTransactionId: payload.merchantTransactionId,
     merchantUserId: payload.merchantUserId,
-    amount: payload.amount, // in paise
+    amount: payload.amount,
     redirectUrl: payload.redirectUrl,
     callbackUrl: payload.callbackUrl,
   };
@@ -27,7 +25,6 @@ export const initiatePhonePePayment = async (payload) => {
   const jsonPayload = JSON.stringify(data);
   const base64Data = Buffer.from(jsonPayload).toString("base64");
 
-  // X-VERIFY hash
   const stringToHash = base64Data + PAYLINK_URI_PATH + salt;
   const xVerify =
     crypto.createHash("sha256").update(stringToHash).digest("hex") +
