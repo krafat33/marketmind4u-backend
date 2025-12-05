@@ -111,6 +111,23 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
+exports.me = async (req, res) => {
+  try {
+    const safeUser = {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      mobile: req.user.mobile || null   // FIXED
+    };
+
+    return res.json(safeUser);
+  } catch (err) {
+    console.log("ME ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 
 /**
  * Verify Employee Code

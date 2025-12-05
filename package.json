@@ -2,7 +2,6 @@
   "name": "marketmind-backend",
   "version": "1.0.0",
   "main": "index.js",
-
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
@@ -32,7 +31,6 @@
     "twilio": "^5.10.5",
     "uuid": "^13.0.0"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/krafat33/marketmind4u-backend.git"

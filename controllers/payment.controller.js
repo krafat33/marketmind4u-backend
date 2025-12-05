@@ -8,9 +8,6 @@ dotenv.config();
 const salt = process.env.PHONEPE_SALT;
 const saltIndex = process.env.PHONEPE_SALT_INDEX;
 
-
-
-// ------------------- PAY -------------------
 export const pay = async (req, res) => {
   try {
     const { amount, userId } = req.body;
