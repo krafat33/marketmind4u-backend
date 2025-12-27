@@ -1,6 +1,5 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
 const Subscription = require("../models/Subscription");
 const User = require("../models/User");
 const Package = require("../models/Package");
@@ -51,10 +50,8 @@ exports.updateStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: "Status required" });
-  
   const sub = await Subscription.findById(id);
   if (!sub) return res.status(404).json({ message: 'Not found' });
-
   sub.status = status;
   await sub.save();
   res.json({ sub });

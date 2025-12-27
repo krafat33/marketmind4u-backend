@@ -8,20 +8,15 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password)
       return res.status(400).json({ message: "Email & password required" });
-
     const user = await User.findOne({ email });
-
     if (!user)
       return res.status(400).json({ message: "User not found" });
-
     const match = await bcrypt.compare(password, user.password);
-
     if (!match)
       return res.status(400).json({ message: "Invalid password" });
-
+    
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -58,6 +53,7 @@ exports.signup = async (req, res) => {
       mobile,
       email,
       password: hash,
+      role:"merchant",
     });
 
     res.json({

@@ -1,42 +1,100 @@
 import axios from "axios";
-import crypto from "crypto";
-import dotenv from "dotenv";
+import qs from "qs";
 
-dotenv.config();
+const BASE_URL = "https://api.phonepe.com"
 
-const merchantId = process.env.PHONEPE_MERCHANT_ID;
-const salt = process.env.PHONEPE_SALT;
-const saltIndex = process.env.PHONEPE_SALT_INDEX;
+let cachedToken = null;
+let tokenExpiry = 0;
 
-const PG_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay";
-const PG_PATH = "/pg/v1/pay";
+// ============================
+//  Get OAuth Token
+// ============================
+const getPhonePeToken = async () => {
+  const now = Date.now();
 
-export const initiatePhonePePayment = async (payload) => {
-  const base64 = Buffer.from(JSON.stringify(payload)).toString("base64");
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
+  }
 
-  const hash = crypto
-    .createHash("sha256")
-    .update(base64 + PG_PATH + salt)
-    .digest("hex");
+  const body = qs.stringify({
+    grant_type: "client_credentials",
+    client_id: process.env.PHONEPE_CLIENT_ID,
+    client_secret: process.env.PHONEPE_CLIENT_SECRET,
+    client_version: "1"
+  });
 
-  const xVerify = `${hash}###${saltIndex}`;
+  const res = await axios.post(
+    `${BASE_URL}/apis/identity-manager/v1/oauth/token`,
+    body,
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    }
+  );
 
+  cachedToken = res.data.access_token;
+  tokenExpiry = now + (res.data.expires_in - 60) * 1000;
+
+  return cachedToken;
+};
+
+// ============================
+//  Initiate Payment
+// ============================
+export const pay = async (req, res) => {
   try {
+    const { merchantOrderId, amount, redirectUrl } = req.body;
+
+    if (!merchantOrderId || !amount || !redirectUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "merchantOrderId, amount & redirectUrl required"
+      });
+    }
+
+    const token = await getPhonePeToken();
+
+    const payload = {
+      merchantOrderId,
+      amount,               // paise me (10000 = ₹100)
+      expireAfter: 1200,
+      paymentFlow: {
+        type: "PG_CHECKOUT",
+        message: "MarketMind4U Order Payment",
+        merchantUrls: [redirectUrl]
+      },
+      metaInfo: {
+        udf1: "MarketMind4U"
+      }
+    };
+
+    console.log("PAYLOAD ===>", payload);
+
     const response = await axios.post(
-      PG_URL,
-      { request: base64 },
+      `${BASE_URL}/apis/pg/checkout/v2/pay`,
+      payload,
       {
         headers: {
           "Content-Type": "application/json",
-          "X-VERIFY": xVerify,
-          "X-MERCHANT-ID": merchantId
+          Authorization: `O-Bearer ${token}`,
+          Accept: "application/json"
         }
       }
     );
 
-    return response.data;
+    return res.json({
+      success: true,
+      data: response.data
+    });
+
   } catch (err) {
-    console.log("PhonePe PG Error:", err.response?.data || err);
-    throw err;
+    console.log("PHONEPE ERROR ===>", err?.response?.data || err.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Payment Failed",
+      error: err?.response?.data || err.message
+    });
   }
 };

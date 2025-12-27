@@ -18,10 +18,89 @@ async function start() {
 
     console.log('⏳ Inserting packages...');
     await Package.insertMany([
-      { key: 'basic', name: 'Basic', price: 1999, durationMonths: 3, features: ['Listing','Basic Support'] },
-      { key: 'silver', name: 'Silver', price: 4999, durationMonths: 6, features: ['Listing','Leads','Priority Support'] },
-      { key: 'gold', name: 'Gold', price: 9999, durationMonths: 12, features: ['Website Preview','Leads','Ad Promotion'] }
+      {
+        key: "gold",
+        name: "Gold Package",
+        screen: "Gold",
+        price: 7999,
+        discount: "40% OFF",
+        features: ["Meta Ad Setup", "Lead Gen. Support", "Promo Design"]
+      },
+      {
+        key: "platinum",
+        name: "Platinum Package",
+        screen: "Platinum",
+        price: 24999,
+        discount: "50% OFF",
+        features: ["Full Campaign Setup", "Dedicated Manager", "Website Included"]
+      },
+      {
+        key: "diamond",
+        name: "Diamond Package",
+        screen: "Diamond",
+        price: 49999,
+        discount: "60% OFF",
+        features: [
+          "Digital Marketing",
+          "Website",
+          "Priority Support",
+          "SEO Optimization",
+          "IVR Number"
+        ]
+      },
+      {
+        key: "platinum_pro",
+        name: "Platinum Pro Package",
+        screen: "Platinum Pro",
+        price: 34999,
+        discount: "55% OFF",
+        features: [
+          "Advanced Setup",
+          "24/7 Support",
+          "SEO Optimization",
+          "GMB Management"
+        ]
+      },
+      {
+        key: "diamond_pro",
+        name: "Diamond Pro Package",
+        screen: "Diamond Pro",
+        price: 69999,
+        discount: "65% OFF",
+        features: [
+          "Full Branding",
+          "Dynamic Website",
+          "Team Access",
+          "Priority Support",
+          "SEO + GMB"
+        ]
+      },
+      {
+        key: "mobile_app",
+        name: "Mobile App Development",
+        screen: "Mobile App Development",
+        price: 69999,
+        discount: "SPECIAL",
+        features: ["Android App", "Admin Panel"]
+      },
+      {
+        key: "website_dev",
+        name: "Website Development",
+        screen: "Website Development",
+        price: 19999,
+        discount: "HOT",
+        features: ["Landing Page", "Business Site", "E-commerce"]
+      },
+      {
+        key: "ai_digital",
+        name: "AI & Digital Marketing Agency",
+        screen: "AI & Digital Marketing Agency",
+        price: 0, // custom plan so 0
+        discount: "PREMIUM",
+        features: ["AI Automations", "Meta + Google Ads", "Brand Setup"]
+      }
     ]);
+    
 
     console.log('⏳ Inserting employee codes...');
     await EmployeeCode.insertMany([

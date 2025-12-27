@@ -9,23 +9,19 @@ const UserSchema = new mongoose.Schema({
 
   role: { 
     type: String, 
-    enum: ['customer','merchant','admin'], 
-    default: 'customer' 
+    enum: ['merchant','admin'], 
+    default: 'merchant' 
   },
 
   otp: {
     code: String,
     expiresAt: Date
   },
-
   googleId: { type: String },
-
   shopName: String,
   location: String,
   shopImage: String,
-
   employeeCodeUsed: { type: String, default: null },
-
   createdAt: { type: Date, default: Date.now }
 });
 
