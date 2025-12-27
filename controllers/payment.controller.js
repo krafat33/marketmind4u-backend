@@ -1,7 +1,7 @@
 const axios = require('axios');
 const qs = require('qs');
 
-const BASE_URL = "https://api.phonepe.com"; // Sandbox URL
+const BASE_URL = "https://api.phonepe.com"; 
 
 let cachedToken = null;
 let tokenExpiry = 0;
