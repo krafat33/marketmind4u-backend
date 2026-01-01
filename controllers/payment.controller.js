@@ -1,52 +1,43 @@
 import { StandardCheckoutClient, Env, CreateSdkOrderRequest } from 'pg-sdk-node';
 import { randomUUID } from 'crypto';
 
-// Environment variables
 const clientId = process.env.PHONEPE_CLIENT_ID;
 const clientSecret = process.env.PHONEPE_CLIENT_SECRET;
-const clientVersion = "1.0.0"; // ya apka actual client version
-const env = Env.SANDBOX; // SANDBOX ya PRODUCTION
+const clientVersion = "1.0.0";
+const env = Env.SANDBOX; // or Env.PRODUCTION
 
-// SDK client instance
 const client = StandardCheckoutClient.getInstance(clientId, clientSecret, clientVersion, env);
 
-// Pay API controller
-const pay = async (req, res) => {
-  try {
-    const { amount } = req.body; // amount in paise
-    const redirectUrl = "https://marketmind4u.com/";
+export const pay = async (req, res) => {
+    try {
+        const merchantOrderId = randomUUID();
+        const amount = Math.round(req.body.amount); // Paise
+        const redirectUrl = req.body.redirectUrl || "https://marketmind4u.com/";
 
-    // Unique merchant order ID
-    const merchantOrderId = "MM" + randomUUID().replace(/-/g, "").slice(0, 18);
+        const request = CreateSdkOrderRequest.StandardCheckoutBuilder()
+            .merchantOrderId(merchantOrderId)
+            .amount(amount)
+            .disablePaymentRetry(true)
+            .redirectUrl(redirectUrl)
+            .build();
 
-    // SDK order request
-    const request = CreateSdkOrderRequest.StandardCheckoutBuilder()
-      .merchantOrderId(merchantOrderId)
-      .amount(amount) // already in paise
-      .disablePaymentRetry(true)
-      .redirectUrl(redirectUrl)
-      .callbackUrl(process.env.PHONEPE_CALLBACK_URL)
-      .build();
+        const response = await client.createSdkOrder(request);
+        
+        // Ye token ya redirect URL wapas frontend ko bhejna
+        return res.status(200).json({
+            success: true,
+            data: {
+                orderId: merchantOrderId,
+                token: response.token,
+                redirectUrl: redirectUrl
+            }
+        });
 
-    // Create SDK order
-    const response = await client.createSdkOrder(request);
-
-    // Response me token + redirect URL milega
-    return res.status(200).json({
-      success: true,
-      token: response.token,
-      redirectUrl: response.redirectUrl || redirectUrl,
-      orderId: merchantOrderId
-    });
-
-  } catch (error) {
-    console.error("PHONEPE SDK ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Payment Failed",
-      error: error.message || error
-    });
-  }
+    } catch (err) {
+        console.error("PHONEPE SDK ERROR:", err);
+        return res.status(500).json({ success: false, message: "Payment Failed", error: err.message });
+    }
 };
+
 
 export { pay };
