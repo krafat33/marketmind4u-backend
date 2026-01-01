@@ -1,75 +1,52 @@
-const axios = require('axios');
-const qs = require('qs');
+import { StandardCheckoutClient, Env, CreateSdkOrderRequest } from 'pg-sdk-node';
+import { randomUUID } from 'crypto';
 
-const BASE_URL = "https://api.phonepe.com"; 
+// Environment variables
+const clientId = process.env.PHONEPE_CLIENT_ID;
+const clientSecret = process.env.PHONEPE_CLIENT_SECRET;
+const clientVersion = "1.0.0"; // ya apka actual client version
+const env = Env.SANDBOX; // SANDBOX ya PRODUCTION
 
-let cachedToken = null;
-let tokenExpiry = 0;
+// SDK client instance
+const client = StandardCheckoutClient.getInstance(clientId, clientSecret, clientVersion, env);
 
-// Get OAuth Token
-const getAccessToken = async () => {
-    const now = Date.now();
-    if (cachedToken && now < tokenExpiry) return cachedToken;
-
-    const body = qs.stringify({
-        grant_type: "client_credentials",
-        client_id: process.env.PHONEPE_CLIENT_ID,
-        client_secret: process.env.PHONEPE_CLIENT_SECRET,
-        client_version: "1"
-    });
-
-    const res = await axios.post(`${BASE_URL}/apis/identity-manager/v1/oauth/token`, body, {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    });
-
-    cachedToken = res.data.access_token;
-    tokenExpiry = now + (res.data.expires_in - 60) * 1000;
-    return cachedToken;
-};
-
-// Pay API
+// Pay API controller
 const pay = async (req, res) => {
   try {
-      const { merchantOrderId, amount, redirectUrl } = req.body;
-      const token = await getAccessToken();
+    const { amount } = req.body; // amount in paise
+    const redirectUrl = "https://marketmind4u.com/";
 
-      // 1. Amount ko strictly Integer (Paise) mein convert karein
-      const finalAmount = Math.round(parseFloat(amount)); 
+    // Unique merchant order ID
+    const merchantOrderId = "MM" + randomUUID().replace(/-/g, "").slice(0, 18);
 
-      const payload = {
-          merchantOrderId: String(merchantOrderId),
-          amount: finalAmount, 
-          expireAfter: 1200,
-          paymentFlow: {
-              type: "PG_CHECKOUT",
-              message: "MarketMind4U Payment",
-              merchantUrls: {
-                  redirectUrl: redirectUrl // Correct: Object format
-              }
-          },
-          metaInfo: { udf1: "MarketMind4U" }
-      };
+    // SDK order request
+    const request = CreateSdkOrderRequest.StandardCheckoutBuilder()
+      .merchantOrderId(merchantOrderId)
+      .amount(amount) // already in paise
+      .disablePaymentRetry(true)
+      .redirectUrl(redirectUrl)
+      .callbackUrl(process.env.PHONEPE_CALLBACK_URL)
+      .build();
 
-      const response = await axios.post(`${BASE_URL}/apis/pg/checkout/v2/pay`, payload, {
-        headers: {
-          "Authorization": `O-Bearer ${token}`, // Fixed: Back to O-Bearer
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-CLIENT-ID": process.env.PHONEPE_CLIENT_ID, // Kabhi-kabhi ye bhi zaroori hota hai
-          "X-CLIENT-VERSION": "1.0.0" 
-      }
-      });
+    // Create SDK order
+    const response = await client.createSdkOrder(request);
 
-      return res.status(200).json({ success: true, data: response.data });
+    // Response me token + redirect URL milega
+    return res.status(200).json({
+      success: true,
+      token: response.token,
+      redirectUrl: response.redirectUrl || redirectUrl,
+      orderId: merchantOrderId
+    });
 
   } catch (error) {
-      // Isse aapko terminal mein detailed error dikhega
-      console.error("PHONEPE ERROR DETAILS:", JSON.stringify(error.response?.data, null, 2));
-      return res.status(500).json({ 
-          success: false, 
-          message: "Payment Failed", 
-          error: error.response?.data || error.message 
-      });
+    console.error("PHONEPE SDK ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Payment Failed",
+      error: error.message || error
+    });
   }
 };
-module.exports = { pay };
+
+export default { pay };
