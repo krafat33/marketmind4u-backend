@@ -40,4 +40,3 @@ export const pay = async (req, res) => {
 };
 
 
-export { pay };
