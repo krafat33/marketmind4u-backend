@@ -49,4 +49,4 @@ const pay = async (req, res) => {
   }
 };
 
-export default { pay };
+export { pay };
