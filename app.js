@@ -24,9 +24,11 @@ app.get("/healthz", (req, res) => {
 
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/subscription", require("./routes/subscription.routes"));
+app.use('/api/webhook', require('./routes/webhook.routes'));
 app.use("/api/payment", require("./routes/payment.routes"));
 app.use("/api/admin", require("./routes/admin.routes"));
 app.use("/api/leads", require("./routes/lead.routes"));
+app.use("/api/plans", require("./routes/plan.routes"));
 
 // Server Start
 const PORT = process.env.PORT || 4000;

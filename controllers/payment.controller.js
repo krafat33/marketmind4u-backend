@@ -1,70 +1,93 @@
-// ESM Style
-import { StandardCheckoutClient, Env, CreateSdkOrderRequest } from "pg-sdk-node";
-import { randomUUID } from "crypto";
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
 
-// Environment variables
-const clientId = process.env.PHONEPE_CLIENT_ID;
-const clientSecret = process.env.PHONEPE_CLIENT_SECRET;
-const clientVersion = process.env.PHONEPE_CLIENT_VERSION || "1.0.0";
-const env = process.env.PHONEPE_ENV === "PRODUCTION" ? Env.PRODUCTION : Env.SANDBOX;
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
-// Initialize SDK client
-const client = StandardCheckoutClient.getInstance(clientId, clientSecret, clientVersion, env);
-
-/**
- * Pay API
- * Expects: { merchantOrderId, amount, redirectUrl } in req.body
- */
-export const pay = async (req, res) => {
+/* ================================
+   CREATE ORDER (CONTROLLER)
+================================ */
+const createRazorpayOrder = async (req, res) => {
   try {
-    const { merchantOrderId, amount, redirectUrl } = req.body;
+    const { amount } = req.body;
 
-    if (!merchantOrderId || !amount || !redirectUrl) {
+    if (!amount) {
       return res.status(400).json({
         success: false,
-        message: "merchantOrderId, amount and redirectUrl are required",
+        message: "Amount required"
       });
     }
 
-    // Convert amount to integer paise if float
-    const finalAmount = Math.round(parseFloat(amount));
-
-    // Create PhonePe SDK request
-    const request = CreateSdkOrderRequest.StandardCheckoutBuilder()
-      .merchantOrderId(merchantOrderId)
-      .amount(finalAmount)
-      .disablePaymentRetry(true)
-      .redirectUrl(redirectUrl)
-      .build();
-
-    // Call PhonePe SDK
-    const response = await client.createSdkOrder(request);
-
-    // Response contains `token` for redirect
-    const token = response.token;
-    const phonepeRedirectUrl = `https://mercury-t2.phonepe.com/transact/pgv3?token=${token}&routingKey=W`;
+    const order = await razorpay.orders.create({
+      amount: amount * 100, // INR → paise
+      currency: "INR",
+      receipt: `rcpt_${Date.now()}`,
+      payment_capture: 1
+    });
 
     return res.status(200).json({
       success: true,
-      data: {
-        merchantOrderId,
-        amount: finalAmount,
-        token,
-        redirectUrl: phonepeRedirectUrl,
-      },
+      order
     });
 
-  } catch (err) {
-    console.error("PHONEPE SDK ERROR:", err);
-
-    // Unauthorized check
-    const status = err?.httpStatusCode || 500;
-    const message = err?.message || "Payment Failed";
-
-    return res.status(status).json({
+  } catch (error) {
+    console.error("CREATE ORDER ERROR:", error);
+    return res.status(500).json({
       success: false,
-      message,
-      error: err,
+      message: "Failed to create order"
     });
   }
+};
+
+/* ================================
+   VERIFY PAYMENT (CONTROLLER)
+================================ */
+const verifyRazorpayPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment data"
+      });
+    }
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment verified successfully"
+    });
+
+  } catch (error) {
+    console.error("VERIFY ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Verification error"
+    });
+  }
+};
+
+module.exports = {
+  createRazorpayOrder,
+  verifyRazorpayPayment
 };

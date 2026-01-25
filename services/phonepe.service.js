@@ -18,7 +18,7 @@ const getPhonePeToken = async () => {
 
   const body = qs.stringify({
     grant_type: "client_credentials",
-    client_id: process.env.PHONEPE_CLIENT_ID,
+    client_id: process.env.PHONEPE_MERCHANT_ID,
     client_secret: process.env.PHONEPE_CLIENT_SECRET,
     client_version: "1"
   });

@@ -1,28 +1,91 @@
 const mongoose = require('mongoose');
 
-const UserSchema = new mongoose.Schema({
-  mobile: { type: String, unique: true },
-  email: { type: String, unique: true, sparse: true },
-  password: { type: String },
+const UserSchema = new mongoose.Schema(
+  {
+    /* ===============================
+       AUTH
+    =============================== */
+    mobile: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true
+    },
 
-  name: { type: String },
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true
+    },
 
-  role: { 
-    type: String, 
-    enum: ['merchant','admin'], 
-    default: 'merchant' 
+    password: {
+      type: String,
+      select: false
+    },
+
+    googleId: {
+      type: String,
+      default: null
+    },
+
+    /* ===============================
+       PROFILE
+    =============================== */
+    name: {
+      type: String,
+      trim: true
+    },
+
+    role: {
+      type: String,
+      enum: ['merchant', 'admin'],
+      default: 'merchant'
+    },
+
+    shopName: String,
+    location: String,
+    shopImage: String,
+
+    /* ===============================
+       SUBSCRIPTION
+    =============================== */
+    activeSubscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscription',
+      default: null
+    },
+
+    employeeCodeUsed: {
+      type: String,
+      default: null
+    },
+
+    /* ===============================
+       OTP
+    =============================== */
+    otp: {
+      code: String,
+      expiresAt: Date
+    },
+
+    /* ===============================
+       RAZORPAY
+    =============================== */
+    razorpayCustomerId: {
+      type: String,
+      default: null
+    },
+
+    mandateAccepted: {
+      type: Boolean,
+      default: false
+    }
   },
-
-  otp: {
-    code: String,
-    expiresAt: Date
-  },
-  googleId: { type: String },
-  shopName: String,
-  location: String,
-  shopImage: String,
-  employeeCodeUsed: { type: String, default: null },
-  createdAt: { type: Date, default: Date.now }
-});
+  {
+    timestamps: true
+  }
+);
 
 module.exports = mongoose.model('User', UserSchema);
