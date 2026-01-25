@@ -24,7 +24,8 @@ async function start() {
         screen: "Gold",
         price: 7999,
         discount: "40% OFF",
-        features: ["Meta Ad Setup", "Lead Gen. Support", "Promo Design"]
+        features: ["Meta Ad Setup", "Lead Gen. Support", "Promo Design"],
+        durationMonths: 12  // ✅ added
       },
       {
         key: "platinum",
@@ -32,7 +33,8 @@ async function start() {
         screen: "Platinum",
         price: 24999,
         discount: "50% OFF",
-        features: ["Full Campaign Setup", "Dedicated Manager", "Website Included"]
+        features: ["Full Campaign Setup", "Dedicated Manager", "Website Included"],
+        durationMonths: 12
       },
       {
         key: "diamond",
@@ -46,7 +48,8 @@ async function start() {
           "Priority Support",
           "SEO Optimization",
           "IVR Number"
-        ]
+        ],
+        durationMonths: 12
       },
       {
         key: "platinum_pro",
@@ -59,7 +62,8 @@ async function start() {
           "24/7 Support",
           "SEO Optimization",
           "GMB Management"
-        ]
+        ],
+        durationMonths: 12
       },
       {
         key: "diamond_pro",
@@ -73,7 +77,8 @@ async function start() {
           "Team Access",
           "Priority Support",
           "SEO + GMB"
-        ]
+        ],
+        durationMonths: 12
       },
       {
         key: "mobile_app",
@@ -81,7 +86,8 @@ async function start() {
         screen: "Mobile App Development",
         price: 69999,
         discount: "SPECIAL",
-        features: ["Android App", "Admin Panel"]
+        features: ["Android App", "Admin Panel"],
+        durationMonths: 12
       },
       {
         key: "website_dev",
@@ -89,7 +95,8 @@ async function start() {
         screen: "Website Development",
         price: 19999,
         discount: "HOT",
-        features: ["Landing Page", "Business Site", "E-commerce"]
+        features: ["Landing Page", "Business Site", "E-commerce"],
+        durationMonths: 12
       },
       {
         key: "ai_digital",
@@ -97,10 +104,10 @@ async function start() {
         screen: "AI & Digital Marketing Agency",
         price: 0, // custom plan so 0
         discount: "PREMIUM",
-        features: ["AI Automations", "Meta + Google Ads", "Brand Setup"]
+        features: ["AI Automations", "Meta + Google Ads", "Brand Setup"],
+        durationMonths: 12
       }
     ]);
-    
 
     console.log('⏳ Inserting employee codes...');
     await EmployeeCode.insertMany([
