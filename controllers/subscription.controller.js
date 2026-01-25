@@ -3,6 +3,8 @@ const Package = require('../models/Package');
 const Subscription = require('../models/Subscription');
 const Payment = require('../models/Payment');
 const EmployeeCode = require('../models/EmployeeCode');
+const Razorpay = require("razorpay");  // ✅ add this
+
 
 /* ======================================================
    CREATE SUBSCRIPTION
@@ -147,8 +149,8 @@ const getMySubscription = async (req, res) => {
 ====================================================== */
 // Razorpay instance
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY,
-  key_secret: process.env.RAZORPAY_SECRET,
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 // ===============================
@@ -270,9 +272,7 @@ const payNow = async (req, res) => {
     console.error("PAY ERROR:", error);
     return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
-};
-
-
+}
 module.exports = {
   createSubscription,
   getMySubscription,

@@ -1,8 +1,8 @@
 const express = require("express");
-const { pay } = require("../controllers/payment.controller");
+const { payNow } = require("../controllers/subscription.controller");
 
 const router = express.Router();
 
-router.post("/pay", pay);
+router.post("/pay", payNow);
 
 module.exports = router;
