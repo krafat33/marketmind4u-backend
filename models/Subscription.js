@@ -25,7 +25,10 @@ const SubscriptionSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-
+    razorpayPlanId: {
+      type: String
+    },
+    
     /* ===============================
        AMOUNTS
     =============================== */
