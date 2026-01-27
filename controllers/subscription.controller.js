@@ -225,7 +225,7 @@ if (paymentType === "MONTHLY") {
   // Populate plan to get razorpayPlanId
   const populatedSub = await Subscription.findById(subscriptionId).populate("plan");
 
-  const planId = populatedSub.plan?.razorpayPlanId;
+  const planId = "plan_S8EhBWzqssa4Z5"
 
   if (!planId) {
     return res.status(400).json({
