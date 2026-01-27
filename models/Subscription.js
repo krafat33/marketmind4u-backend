@@ -25,10 +25,7 @@ const SubscriptionSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-    razorpayPlanId: {
-      type: String,
-      required: true
-    },
+   
     
     /* ===============================
        AMOUNTS
@@ -108,7 +105,7 @@ const SubscriptionSchema = new mongoose.Schema(
       enum: ["PENDING", "ACTIVE", "FAILED"],
       default: "PENDING"
     },
-
+     
     /* ===============================
        STATUS
     =============================== */

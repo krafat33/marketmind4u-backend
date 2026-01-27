@@ -216,55 +216,70 @@ const payNow = async (req, res) => {
     // ===============================
     // MONTHLY ECS OPTION
     // ===============================
-    if (paymentType === "MONTHLY") {
-      if (!sub.startDate) sub.startDate = new Date();
+    // ===============================
+// MONTHLY ECS OPTION
+// ===============================
+if (paymentType === "MONTHLY") {
+  if (!sub.startDate) sub.startDate = new Date();
 
-      // Razorpay Subscription create
-      const planId = sub.razorpayPlanId; // pre-created Razorpay plan_id
-      if (!planId) {
-        return res.status(400).json({ success: false, message: "Plan ID missing for monthly subscription" });
-      }
+  // Populate plan to get razorpayPlanId
+  const populatedSub = await Subscription.findById(subscriptionId).populate("plan");
 
-      // Create subscription in Razorpay
-      const razorResponse = await razorpay.subscriptions.create({
-        plan_id: planId,
-        total_count: 12,
-        customer_notify: 1,
-        notes: { subscription_type: "MONTHLY", subscriptionId: sub._id.toString() }
-      });
+  const planId = populatedSub.plan?.razorpayPlanId;
 
-      // Save first payment in DB if paid immediately
-      const payment = await Payment.create({
-        subscription: sub._id,
-        amount: Math.round(sub.totalAmount / 12), // first installment
-        method,
-        status: "success",
-        razorpayPaymentId: null, // will update after actual capture
-        paidAt: new Date()
-      });
+  if (!planId) {
+    return res.status(400).json({
+      success: false,
+      message: "Razorpay Plan ID missing in package"
+    });
+  }
 
-      sub.payments.push(payment._id);
-      sub.paidAmount += payment.amount;
-
-      // Auto-generate next 12 months ECS schedule
-      sub.nextDueDates = [];
-      let nextDate = new Date(sub.startDate);
-      for (let i = 0; i < 12; i++) {
-        nextDate = new Date(nextDate.setMonth(nextDate.getMonth() + 1));
-        sub.nextDueDates.push(nextDate);
-      }
-
-      sub.razorpaySubscriptionId = razorResponse.id;
-      sub.status = "ACTIVE";
-      await sub.save();
-
-      return res.status(200).json({
-        success: true,
-        payment,
-        subscription: sub,
-        razorpaySubscription: razorResponse
-      });
+  // Create subscription in Razorpay
+  const razorResponse = await razorpay.subscriptions.create({
+    plan_id: planId,
+    total_count: populatedSub.plan.durationMonths || 12,
+    customer_notify: 1,
+    notes: {
+      subscription_type: "MONTHLY",
+      subscriptionId: populatedSub._id.toString()
     }
+  });
+
+  // Save first payment in DB (optional: if payment is done immediately)
+  const payment = await Payment.create({
+    subscription: populatedSub._id,
+    amount: Math.round(populatedSub.totalAmount / (populatedSub.plan.durationMonths || 12)), // first installment
+    method,
+    status: "success",
+    razorpayPaymentId: null, // update after actual capture
+    paidAt: new Date()
+  });
+
+  // Update subscription
+  populatedSub.payments.push(payment._id);
+  populatedSub.paidAmount += payment.amount;
+  populatedSub.razorpaySubscriptionId = razorResponse.id;
+  populatedSub.status = "ACTIVE";
+
+  // Auto-generate next ECS schedule
+  populatedSub.nextDueDates = [];
+  let nextDate = new Date(populatedSub.startDate);
+  const monthsCount = populatedSub.plan.durationMonths || 12;
+  for (let i = 0; i < monthsCount; i++) {
+    nextDate = new Date(nextDate.setMonth(nextDate.getMonth() + 1));
+    populatedSub.nextDueDates.push(nextDate);
+  }
+
+  await populatedSub.save();
+
+  return res.status(200).json({
+    success: true,
+    payment,
+    subscription: populatedSub,
+    razorpaySubscription: razorResponse
+  });
+}
+
 
     return res.status(400).json({ success: false, message: "Invalid payment type" });
 
