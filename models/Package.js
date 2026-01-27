@@ -42,6 +42,7 @@ const PackageSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    
 
     // 🟢 Active / Inactive
     isActive: {
