@@ -151,8 +151,8 @@ const razorpay = new Razorpay({
 
 const payNow = async (req, res) => {
   try {
-    const { subscriptionId, amount, method, paymentType } = req.body;
-    if (!subscriptionId || !amount || !method || !paymentType) {
+    const { subscriptionId } = req.body;
+    if (!subscriptionId) {
       return res.status(400).json({ success: false, message: "Required fields missing" });
     }
 
@@ -163,9 +163,7 @@ const payNow = async (req, res) => {
     // DOWN_EMI PAYMENT
     // -------------------------------
     if (paymentType === "DOWN_EMI") {
-      if (!sub.employeeCode && amount < sub.totalAmount) {
-        return res.status(400).json({ success: false, message: "Full payment required" });
-      }
+      
 
       const payment = await Payment.create({
         subscription: sub._id,
