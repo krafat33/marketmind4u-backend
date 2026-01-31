@@ -99,7 +99,10 @@ const SubscriptionSchema = new mongoose.Schema(
       type: String,
       default: null
     },
-
+    gstAmount: {
+      type: Number,
+      default: 0
+    },
     mandateStatus: {
       type: String,
       enum: ["PENDING", "ACTIVE", "FAILED"],

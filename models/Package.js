@@ -1,58 +1,43 @@
 const mongoose = require('mongoose');
 
-const PackageSchema = new mongoose.Schema(
-  {
-    // 🔑 Internal unique key (used in frontend / API)
-    key: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true
-    },
+const PackageSchema = new mongoose.Schema({
+  key: String,
+  name: String,
+  screen: String,
 
-    // 📦 Plan name (display)
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
-    // 💰 Price (INR)
-    price: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-
-    // ⏱ Duration in months
-    durationMonths: {
-      type: Number,
-      required: true,
-      min: 1
-    },
-
-    // ✨ Features list
-    features: {
-      type: [String],
-      default: []
-    },
-
-    // 🔁 Razorpay Plan Mapping (AUTO-DEBIT)
-    razorpayPlanId: {
-      type: String,
-      default: null
-    },
-    
-
-    // 🟢 Active / Inactive
-    isActive: {
-      type: Boolean,
-      default: true
-    }
+  basePrice: {
+    type: Number,
+    required: true
   },
-  {
-    timestamps: true
+
+  gstRate: {
+    type: Number,
+    default: 18
+  },
+
+  gstAmount: {
+    type: Number,
+    default: 0
+  },
+
+  price: {
+    type: Number, // ✅ FINAL PRICE (base + GST)
+    required: true
+  },
+
+  discount: String,
+  features: [String],
+  durationMonths: Number,
+
+  razorpayPlanId: {
+    type: String,
+    default: null
+  },
+
+  isActive: {
+    type: Boolean,
+    default: true
   }
-);
+}, { timestamps: true });
 
 module.exports = mongoose.model('Package', PackageSchema);

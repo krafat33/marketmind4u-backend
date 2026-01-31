@@ -17,21 +17,35 @@ async function start() {
     await User.deleteMany({});
 
     console.log('⏳ Inserting packages...');
+    console.log('⏳ Inserting packages with GST...');
+
+    const GST_RATE = 18;
+    
+    const withGST = (price) => {
+      const gstAmount = Math.round(price * GST_RATE / 100);
+      return {
+        basePrice: price,
+        gstRate: GST_RATE,
+        gstAmount,
+        price: price + gstAmount
+      };
+    };
+    
     await Package.insertMany([
       {
         key: "gold",
         name: "Gold Package",
         screen: "Gold",
-        price: 7999,
+        ...withGST(7999),
         discount: "40% OFF",
         features: ["Meta Ad Setup", "Lead Gen. Support", "Promo Design"],
-        durationMonths: 12  // ✅ added
+        durationMonths: 12
       },
       {
         key: "platinum",
         name: "Platinum Package",
         screen: "Platinum",
-        price: 24999,
+        ...withGST(24999),
         discount: "50% OFF",
         features: ["Full Campaign Setup", "Dedicated Manager", "Website Included"],
         durationMonths: 12
@@ -40,7 +54,7 @@ async function start() {
         key: "diamond",
         name: "Diamond Package",
         screen: "Diamond",
-        price: 49999,
+        ...withGST(49999),
         discount: "60% OFF",
         features: [
           "Digital Marketing",
@@ -55,7 +69,7 @@ async function start() {
         key: "platinum_pro",
         name: "Platinum Pro Package",
         screen: "Platinum Pro",
-        price: 34999,
+        ...withGST(39999),
         discount: "55% OFF",
         features: [
           "Advanced Setup",
@@ -69,7 +83,7 @@ async function start() {
         key: "diamond_pro",
         name: "Diamond Pro Package",
         screen: "Diamond Pro",
-        price: 69999,
+        ...withGST(69999),
         discount: "65% OFF",
         features: [
           "Full Branding",
@@ -84,7 +98,7 @@ async function start() {
         key: "mobile_app",
         name: "Mobile App Development",
         screen: "Mobile App Development",
-        price: 69999,
+        ...withGST(59999),
         discount: "SPECIAL",
         features: ["Android App", "Admin Panel"],
         durationMonths: 12
@@ -93,7 +107,7 @@ async function start() {
         key: "website_dev",
         name: "Website Development",
         screen: "Website Development",
-        price: 19999,
+        ...withGST(19999),
         discount: "HOT",
         features: ["Landing Page", "Business Site", "E-commerce"],
         durationMonths: 12
@@ -102,13 +116,16 @@ async function start() {
         key: "ai_digital",
         name: "AI & Digital Marketing Agency",
         screen: "AI & Digital Marketing Agency",
-        price: 0, // custom plan so 0
+        basePrice: 0,
+        gstRate: GST_RATE,
+        gstAmount: 0,
+        price: 0,
         discount: "PREMIUM",
         features: ["AI Automations", "Meta + Google Ads", "Brand Setup"],
         durationMonths: 12
       }
     ]);
-
+    
     console.log('⏳ Inserting employee codes...');
     await EmployeeCode.insertMany([
       { code: 'EMP1001', description: 'Trusted employee code' },

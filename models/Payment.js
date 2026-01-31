@@ -11,6 +11,14 @@ const PaymentSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+
+  // ✅ ADD THIS
+  employeeCode: {
+    type: String,
+    default: null,
+    index: true // reporting / search ke liye useful
+  },
+
   paymentType: {
     type: String,
     enum: ['DOWN_EMI', 'MONTHLY'],
@@ -23,7 +31,7 @@ const PaymentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['SUCCESS', 'FAILED'],
+    enum: ['SUCCESS', 'FAILED', 'PENDING'], // 👈 PENDING add karna better
     required: true
   },
   amount: {
@@ -31,6 +39,7 @@ const PaymentSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+ 
   razorpayPaymentId: {
     type: String,
     default: null
