@@ -2,9 +2,13 @@ const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema(
   {
-    /* ===============================
-       AUTH
-    =============================== */
+  userCode: {
+    type: String,
+    unique: true,
+    immutable: true,
+    index: true
+  },
+  
     mobile: {
       type: String,
       required: true,
@@ -86,6 +90,24 @@ const UserSchema = new mongoose.Schema(
   {
     timestamps: true
   }
+  
 );
+UserSchema.pre('save', async function (next) {
+  if (this.userCode) return next();
+
+  const lastUser = await mongoose
+    .model('User')
+    .findOne({ userCode: { $exists: true } })
+    .sort({ createdAt: -1 });
+
+  let nextNumber = 1;
+
+  if (lastUser && lastUser.userCode) {
+    nextNumber = parseInt(lastUser.userCode.replace('MM4U', '')) + 1;
+  }
+
+  this.userCode = `MM4U${String(nextNumber).padStart(4, '0')}`;
+  next();
+});
 
 module.exports = mongoose.model('User', UserSchema);

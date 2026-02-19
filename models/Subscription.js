@@ -17,7 +17,7 @@ const SubscriptionSchema = new mongoose.Schema(
     =============================== */
     plan: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Package", // ✅ FIXED
+      ref: "Package", 
       required: true
     },
 
@@ -65,9 +65,10 @@ const SubscriptionSchema = new mongoose.Schema(
       default: null
     },
 
-    isPartialAllowed: {
-      type: Boolean,
-      default: false
+    paymentType: {
+      type: String,
+      enum: ["FULL", "PARTIAL"],
+      required: true
     },
 
     emiSchedule: [

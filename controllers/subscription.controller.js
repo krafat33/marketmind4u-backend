@@ -12,7 +12,7 @@ const Razorpay = require("razorpay");  // ✅ add this
 const createSubscription = async (req, res) => {
   try {
     const {
-      userId,                 // 👈 BODY se
+      userId,
       planName,
       amount,
       businessEmail,
@@ -22,50 +22,84 @@ const createSubscription = async (req, res) => {
       businessName,
       businessCategory,
       gstNumber,
+      gstRate = 18,
       empCode,
-      isPartialPayment,
-      paymentDetails
+      paymentType
     } = req.body;
 
-    // 🔴 BASIC VALIDATION
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required"
-      });
+    // BASIC VALIDATION
+    if (!userId || !planName || !amount || !contactNumber || !paymentType) {
+      return res.status(400).json({ success: false, message: "Required fields missing" });
     }
 
-    if (!planName || !amount || !contactNumber) {
-      return res.status(400).json({
-        success: false,
-        message: "Required fields missing"
-      });
-    }
-
-    // 🔎 USER CHECK
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user"
-      });
-    }
+    if (!user) return res.status(400).json({ success: false, message: "Invalid user" });
 
-    // 🔎 PLAN CHECK
     const plan = await Package.findOne({ name: planName });
-    if (!plan) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid plan selected"
-      });
+    if (!plan) return res.status(400).json({ success: false, message: "Invalid plan" });
+
+    if ((paymentType === "PARTIAL" || paymentType === "MONTHLY") && !empCode) {
+      return res.status(400).json({ success: false, message: "Employee code required" });
     }
 
-    // 🧾 CREATE SUBSCRIPTION DATA
-    const subscriptionData = {
-      user: userId,           // ✅ BODY se
-      plan: plan._id,         // ✅ PACKAGE se
+    // GST
+    const gstAmount = Math.round((amount * gstRate) / 100);
+    const totalAmount = amount + gstAmount;
+
+    let paidAmount = 0;
+    let remainingAmount = totalAmount;
+    let  emiSchedule = null;
+
+    // 🔥 PAYMENT LOGIC
+    if (paymentType === "FULL") {
+      paidAmount = totalAmount;
+      remainingAmount = 0;
+    }
+
+    if (paymentType === "PARTIAL") {
+      const down = Math.round(totalAmount * 0.6);
+      const emi = Math.round(totalAmount * 0.2);
+    
+      paidAmount = 0;                     // ❗ nothing paid yet
+      remainingAmount = totalAmount;
+    
+      const now = new Date();
+    
+      emiSchedule = [
+        {
+          amount: down,
+          dueDate: now,
+          isPaid: false
+        },
+        {
+          amount: emi,
+          dueDate: new Date(new Date().setMonth(now.getMonth() + 1)),
+          isPaid: false
+        },
+        {
+          amount: emi,
+          dueDate: new Date(new Date().setMonth(now.getMonth() + 2)),
+          isPaid: false
+        }
+      ];
+    }
+
+    const subscription = await Subscription.create({
+      user: userId,
+      plan: plan._id,
       planName,
-      totalAmount: amount,
+
+      baseAmount: amount,
+      gstRate,
+      gstAmount,
+      totalAmount,
+
+      paidAmount,
+      remainingAmount,
+
+      paymentType,
+      emiSchedule,
+
       businessEmail,
       location,
       ownerName,
@@ -73,32 +107,22 @@ const createSubscription = async (req, res) => {
       businessName,
       businessCategory,
       gstNumber,
-      employeeCode: empCode || null,
-      isPartialPayment: isPartialPayment || false,
-      paidAmount: paymentDetails?.paidNow || 0,
-      emiDetails: paymentDetails?.emi || null,
-      status: "ACTIVE",
-      createdAt: new Date()
-    };
 
-    const subscription = await Subscription.create(subscriptionData);
+      employeeCode: empCode,
+      status: remainingAmount === 0 ? "PAID" : "ACTIVE"
+    });
 
     return res.status(201).json({
       success: true,
-      message: "Subscription created successfully",
-      data: subscription
+      message: "Subscription created",
+      subscription
     });
 
-  } catch (error) {
-    console.error("CREATE SUB ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message
-    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 /* ======================================================
    GET MY SUBSCRIPTION
 ====================================================== */
@@ -151,109 +175,194 @@ const razorpay = new Razorpay({
 
 const payNow = async (req, res) => {
   try {
-    const { subscriptionId } = req.body;
-    if (!subscriptionId) {
-      return res.status(400).json({ success: false, message: "Required fields missing" });
+    const { subscriptionId, amount, method, paymentType } = req.body;
+
+    if (!subscriptionId || !amount || !paymentType) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields missing"
+      });
     }
 
     const sub = await Subscription.findById(subscriptionId).populate("plan");
-    if (!sub) return res.status(404).json({ success: false, message: "Subscription not found" });
+    if (!sub) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription not found"
+      });
+    }
 
-    // -------------------------------
-    // DOWN_EMI PAYMENT
-    // -------------------------------
-    if (paymentType === "DOWN_EMI") {
-      
+    const totalAmount = sub.totalAmount; // GST included
+    const alreadyPaid = sub.paidAmount || 0;
+
+    if (alreadyPaid + amount > totalAmount) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment exceeds total amount"
+      });
+    }
+
+    /* ===============================
+       FULL PAYMENT
+    =============================== */
+    if (paymentType === "FULL") {
+      const payableAmount = totalAmount - alreadyPaid;
+
+      const paymentLink = await razorpay.paymentLink.create({
+        amount: payableAmount * 100,
+        currency: "INR",
+        accept_partial: false,
+        description: `Full payment for ${sub.planName}`,
+        customer: {
+          name: sub.ownerName || "Customer",
+          contact: sub.contactNumber,
+          email: sub.businessEmail
+        },
+        notes: {
+          subscriptionId: sub._id.toString(),
+          paymentType: "FULL"
+        }
+      });
 
       const payment = await Payment.create({
         subscription: sub._id,
         user: sub.user,
-        paymentType: "DOWN_EMI",
-        method: method.toLowerCase(),
-        status: "SUCCESS",
-        amount,
-        paidAt: new Date()
+        paymentType: "FULL",
+        method: "razorpay_link",
+        status: "PENDING",
+        amount: payableAmount,
+        razorpayPaymentLinkId: paymentLink.id
       });
 
-      sub.payments.push(payment._id);
-      sub.paidAmount += amount;
-      const remaining = sub.totalAmount - sub.paidAmount;
-      sub.status = remaining <= 0 ? "COMPLETED" : "PARTIAL";
-
-      // 60% rule
-      const sixtyPercent = Math.round(sub.totalAmount * 0.6);
-      if (sub.employeeCode && sub.paidAmount >= sixtyPercent && !sub.startDate) {
-        const now = new Date();
-        sub.startDate = now;
-        sub.nextDueDates = [
-          new Date(now.setMonth(now.getMonth() + 1)),
-          new Date(now.setMonth(now.getMonth() + 2))
-        ];
-      }
-
-      await sub.save();
-
-      return res.status(200).json({ success: true, payment, subscription: sub, remainingAmount: Math.max(remaining, 0) });
+      return res.status(200).json({
+        success: true,
+        paymentLink: paymentLink.short_url,
+        paymentId: payment._id,
+        subscriptionId: sub._id,
+        totalAmount,
+        payableAmount
+      });
     }
 
-    // -------------------------------
-    // MONTHLY ECS PAYMENT
-    // -------------------------------
+    /* ===============================
+       PARTIAL PAYMENT
+    =============================== */
+    if (paymentType === "PARTIAL") {
+
+      const nextEmi = sub.emiSchedule.find(e => !e.isPaid);
+    
+      if (!nextEmi) {
+        return res.status(400).json({
+          success: false,
+          message: "All EMIs already paid"
+        });
+      }
+    
+      if (amount !== nextEmi.amount) {
+        return res.status(400).json({
+          success: false,
+          message: `Please pay exact EMI amount ₹${nextEmi.amount}`
+        });
+      }
+    
+    
+    
+      // 🔥 Razorpay link for EMI only
+      const paymentLink = await razorpay.paymentLink.create({
+        amount: amount * 100,
+        currency: "INR",
+        accept_partial: false,
+        description: `EMI payment for ${sub.planName}`,
+        customer: {
+          name: sub.ownerName || "Customer",
+          contact: sub.contactNumber,
+          email: sub.businessEmail
+        },
+        notes: {
+          subscriptionId: sub._id.toString(),
+          emiAmount: amount,
+          paymentType: "PARTIAL"
+        }
+      });
+    
+      const payment = await Payment.create({
+        subscription: sub._id,
+        user: sub.user,
+        paymentType: "PARTIAL",
+        method: method,
+        status: "PENDING",
+        amount,
+        razorpayPaymentLinkId: paymentLink.id
+      });
+    
+      return res.json({
+        success: true,
+        paymentLink: paymentLink.short_url,
+        paymentId: payment._id,
+        amount
+      });
+    }
+
+    /* ===============================
+       MONTHLY ECS
+    =============================== */
     if (paymentType === "MONTHLY") {
       const plan = sub.plan;
       const months = plan.durationMonths || 12;
-    
-      // ✅ GST already included
-      const monthlyAmount = Math.round(sub.totalAmount / months);
-    
-      if (!sub.startDate) sub.startDate = new Date();
-    
-      // Razorpay Plan
+      const monthlyAmount = Math.round(totalAmount / months);
+
       if (!plan.razorpayPlanId) {
         const razorPlan = await razorpay.plans.create({
           period: "monthly",
           interval: 1,
           item: {
             name: plan.name,
-            amount: monthlyAmount * 100, // paise
-            currency: "INR",
-            description: `${plan.name} Monthly`
+            amount: monthlyAmount * 100,
+            currency: "INR"
           }
         });
         plan.razorpayPlanId = razorPlan.id;
+        await plan.save();
       }
-    
+
       const razorSub = await razorpay.subscriptions.create({
         plan_id: plan.razorpayPlanId,
         total_count: months,
         customer_notify: 1
       });
-    
+
       const payment = await Payment.create({
         subscription: sub._id,
         user: sub.user,
         paymentType: "MONTHLY",
-        method: method.toLowerCase(),
+        method: method?.toLowerCase() || "razorpay",
         status: "PENDING",
         amount: monthlyAmount
       });
-    
-      sub.payments.push(payment._id);
-      sub.paidAmount += monthlyAmount;
-      sub.razorpaySubscriptionId = razorSub.id;
-      sub.status = "ACTIVE";
-    
-      await sub.save();
-    
-      return res.json({ success: true, payment, razorpaySubscription: razorSub });
+
+      return res.status(200).json({
+        success: true,
+        razorpaySubscriptionId: razorSub.id,
+        paymentId: payment._id,
+        monthlyAmount,
+        totalAmount
+      });
     }
-    
+
+    return res.status(400).json({
+      success: false,
+      message: "Invalid payment type"
+    });
+
   } catch (error) {
     console.error("PAY ERROR:", error);
-    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
   }
 };
-
 module.exports = {
   createSubscription,
   getMySubscription,

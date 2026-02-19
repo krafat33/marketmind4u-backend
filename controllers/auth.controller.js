@@ -5,6 +5,40 @@ const { OAuth2Client } = require("google-auth-library");
 const EmployeeCode = require("../models/EmployeeCode");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// SIGNUP
+exports.signup = async (req, res) => {
+  try {
+    const { name, mobile, email, password, confirmPassword } = req.body;
+
+    if (!name || !mobile || !email || !password || !confirmPassword)
+      return res.status(400).json({ message: "All fields are required" });
+
+    if (password !== confirmPassword)
+      return res.status(400).json({ message: "Passwords do not match" });
+
+    const exists = await User.findOne({ email});
+    if (exists)
+      return res.status(400).json({ message: "Email already registered" });
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      mobile,
+      email,
+      password: hash,
+      role:"merchant",
+    });
+
+    res.json({
+      message: "Signup successful",
+      user
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -39,40 +73,6 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// SIGNUP
-exports.signup = async (req, res) => {
-  try {
-    const { name, mobile, email, password, confirmPassword } = req.body;
-
-    if (!name || !mobile || !email || !password || !confirmPassword)
-      return res.status(400).json({ message: "All fields are required" });
-
-    if (password !== confirmPassword)
-      return res.status(400).json({ message: "Passwords do not match" });
-
-    const exists = await User.findOne({ email});
-    if (exists)
-      return res.status(400).json({ message: "Email already registered" });
-
-    const hash = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      name,
-      mobile,
-      email,
-      password: hash,
-      role:"merchant",
-    });
-
-    res.json({
-      message: "Signup successful",
-      user,
-    });
-  } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };

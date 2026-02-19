@@ -21,12 +21,12 @@ const PaymentSchema = new mongoose.Schema({
 
   paymentType: {
     type: String,
-    enum: ['DOWN_EMI', 'MONTHLY'],
+    enum: ['PARTIAL', 'MONTHLY','FULL'],
     required: true
   },
   method: {
     type: String,
-    enum: ['upi', 'card', 'netbanking', 'wallet'],
+    enum: ['upi', 'card', 'netbanking', 'wallet','razorpay_link'],
     required: true
   },
   status: {
