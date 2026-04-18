@@ -54,15 +54,6 @@ const SubscriptionSchema = new mongoose.Schema(
         ref: "Payment"
       }
     ],
-
-    /* ===============================
-       EMI / PARTIAL
-    =============================== */
-    employeeCode: {
-      type: String,
-      default: null
-    },
-
     paymentType: {
       type: String,
       enum: ["FULL", "PARTIAL"],
