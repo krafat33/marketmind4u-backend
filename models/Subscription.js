@@ -25,8 +25,6 @@ const SubscriptionSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-   
-    
     /* ===============================
        AMOUNTS
     =============================== */
@@ -92,7 +90,6 @@ const SubscriptionSchema = new mongoose.Schema(
         }
       }
     ],
-
     /* ===============================
        RAZORPAY (AUTO-DEBIT)
     =============================== */

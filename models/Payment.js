@@ -31,7 +31,7 @@ const PaymentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['SUCCESS', 'FAILED', 'PENDING'], // 👈 PENDING add karna better
+    enum: ['SUCCESS', 'FAILED', 'PENDING'], 
     required: true
   },
   amount: {

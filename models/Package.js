@@ -21,7 +21,7 @@ const PackageSchema = new mongoose.Schema({
   },
 
   price: {
-    type: Number, // ✅ FINAL PRICE (base + GST)
+    type: Number, 
     required: true
   },
 

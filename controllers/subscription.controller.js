@@ -2,13 +2,8 @@ const User = require('../models/User');
 const Package = require('../models/Package');
 const Subscription = require('../models/Subscription');
 const Payment = require('../models/Payment');
-const EmployeeCode = require('../models/EmployeeCode');
-const Razorpay = require("razorpay");  // ✅ add this
+const Razorpay = require("razorpay"); 
 
-
-/* ======================================================
-   CREATE SUBSCRIPTION
-====================================================== */
 const createSubscription = async (req, res) => {
   try {
     const {
@@ -23,7 +18,6 @@ const createSubscription = async (req, res) => {
       businessCategory,
       gstNumber,
       gstRate = 18,
-      empCode,
       paymentType
     } = req.body;
 
@@ -38,9 +32,7 @@ const createSubscription = async (req, res) => {
     const plan = await Package.findOne({ name: planName });
     if (!plan) return res.status(400).json({ success: false, message: "Invalid plan" });
 
-    if ((paymentType === "PARTIAL" || paymentType === "MONTHLY") && !empCode) {
-      return res.status(400).json({ success: false, message: "Employee code required" });
-    }
+   
 
     // GST
     const gstAmount = Math.round((amount * gstRate) / 100);
@@ -88,18 +80,14 @@ const createSubscription = async (req, res) => {
       user: userId,
       plan: plan._id,
       planName,
-
       baseAmount: amount,
       gstRate,
       gstAmount,
       totalAmount,
-
       paidAmount,
       remainingAmount,
-
       paymentType,
       emiSchedule,
-
       businessEmail,
       location,
       ownerName,
@@ -107,8 +95,6 @@ const createSubscription = async (req, res) => {
       businessName,
       businessCategory,
       gstNumber,
-
-      employeeCode: empCode,
       status: remainingAmount === 0 ? "PAID" : "ACTIVE"
     });
 
@@ -221,7 +207,9 @@ const payNow = async (req, res) => {
         notes: {
           subscriptionId: sub._id.toString(),
           paymentType: "FULL"
-        }
+        },
+         callback_url: "https://marketmind4u-backend.onrender.com/api/payment/callback",
+       callback_method: "get"
       });
 
       const payment = await Payment.create({
@@ -265,8 +253,6 @@ const payNow = async (req, res) => {
         });
       }
     
-    
-    
       // 🔥 Razorpay link for EMI only
       const paymentLink = await razorpay.paymentLink.create({
         amount: amount * 100,
@@ -282,7 +268,9 @@ const payNow = async (req, res) => {
           subscriptionId: sub._id.toString(),
           emiAmount: amount,
           paymentType: "PARTIAL"
-        }
+        },
+        callback_url: "https://marketmind4u-backend.onrender.com/api/payment/callback",
+       callback_method: "get"
       });
     
       const payment = await Payment.create({
@@ -302,7 +290,6 @@ const payNow = async (req, res) => {
         amount
       });
     }
-
     /* ===============================
        MONTHLY ECS
     =============================== */

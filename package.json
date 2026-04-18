@@ -30,6 +30,8 @@
     "pg-sdk-node": "https://phonepe.mycloudrepo.io/public/repositories/phonepe-pg-sdk-node/releases/v2/phonepe-pg-sdk-node-2.0.3.tgz",
     "qs": "^6.14.1",
     "razorpay": "^2.9.6",
+    "react-native-confetti-cannon": "^1.5.2",
+    "react-native-scratch-card": "^1.1.0",
     "sequelize": "^6.37.7",
     "twilio": "^5.10.5",
     "uuid": "^13.0.0"

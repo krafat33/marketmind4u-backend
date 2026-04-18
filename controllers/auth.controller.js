@@ -135,11 +135,6 @@ exports.me = async (req, res) => {
   }
 };
 
-
-
-/**
- * Verify Employee Code
- */
 exports.verifyEmployee = async (req, res) => {
   try {
     const { employeeCode } = req.body;
