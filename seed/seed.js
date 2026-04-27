@@ -2,7 +2,6 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 const Package = require('../models/Package');
-const EmployeeCode = require('../models/EmployeeCode');
 const User = require('../models/User');
 
 async function start() {
@@ -13,7 +12,6 @@ async function start() {
 
     console.log('⏳ Clearing old data...');
     await Package.deleteMany({});
-    await EmployeeCode.deleteMany({});
     await User.deleteMany({});
 
     console.log('⏳ Inserting packages...');
@@ -126,12 +124,7 @@ async function start() {
       }
     ]);
     
-    console.log('⏳ Inserting employee codes...');
-    await EmployeeCode.insertMany([
-      { code: 'EMP1001', description: 'Trusted employee code' },
-      { code: 'EMP1002', description: 'Promo partner' }
-    ]);
-
+  
     console.log('⏳ Creating admin user...');
     const adminMobile = process.env.ADMIN_MOBILE || '9999999999';
     await User.create({ mobile: adminMobile, role: 'admin', name: 'Admin' });
