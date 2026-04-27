@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const webhookController = require('../controllers/webhook.controller');
+const {handleWebhook}  = require('../controllers/webhook.controller');
 
-router.post('/razorpay', webhookController.handleWebhook);
+router.post('/razorpay', handleWebhook);
 
 module.exports = router;

@@ -208,7 +208,7 @@ const payNow = async (req, res) => {
           subscriptionId: sub._id.toString(),
           paymentType: "FULL"
         },
-         callback_url: "https://marketmind4u-backend.onrender.com/api/payment/callback",
+        callback_url: "https://marketmind4u-backend.onrender.com/api/payment/callback",
        callback_method: "get"
       });
 
