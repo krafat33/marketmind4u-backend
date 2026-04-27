@@ -13,8 +13,6 @@ const authMiddleware = require("../middleware/auth.middleware");
 router.post("/signup", signup);
 router.post("/login", login);
 
-// Verify employee
-router.post("/verify-employee", verifyEmployee);
 
 // Get logged-in user
 router.get("/me", authMiddleware, me);

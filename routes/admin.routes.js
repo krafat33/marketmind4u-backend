@@ -10,7 +10,6 @@ router.get("/subscriptions", adminAuth, adminCtrl.listSubscriptions);
 
 router.put("/subscription/:id/status", adminAuth, adminCtrl.updateStatus);
 
-router.post("/employee-code", adminAuth, adminCtrl.createEmployeeCode);
 
 router.get("/leads", adminAuth, adminCtrl.getLeads);
 

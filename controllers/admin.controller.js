@@ -1,9 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Subscription = require("../models/Subscription");
-const User = require("../models/User");
-const Package = require("../models/Package");
-const EmployeeCode = require("../models/EmployeeCode");
 const Lead = require("../models/Lead");
 
 // ADMIN LOGIN
@@ -56,17 +53,6 @@ exports.updateStatus = async (req, res) => {
   await sub.save();
   res.json({ sub });
 };
-
-exports.createEmployeeCode = async (req, res) => {
-  try {
-    const { code, description } = req.body;
-    const ec = await EmployeeCode.create({ code, description });
-    res.json({ success: true, ec });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
 exports.getLeads = async (req, res) => {
   try {
     const { subscriptionId } = req.query;

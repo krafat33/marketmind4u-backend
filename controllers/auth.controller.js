@@ -2,7 +2,6 @@ const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
-const EmployeeCode = require("../models/EmployeeCode");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // SIGNUP
@@ -132,20 +131,5 @@ exports.me = async (req, res) => {
   } catch (err) {
     console.log("ME ERROR:", err);
     return res.status(500).json({ message: "Server error" });
-  }
-};
-
-exports.verifyEmployee = async (req, res) => {
-  try {
-    const { employeeCode } = req.body;
-    if (!employeeCode) return res.status(400).json({ message: "Employee code required" });
-
-    const code = await EmployeeCode.findOne({ code: employeeCode });
-    if (!code) return res.status(404).json({ message: "Invalid Employee Code" });
-
-    res.json({ success: true, message: "Employee Code Verified", data: code });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error", error });
   }
 };
