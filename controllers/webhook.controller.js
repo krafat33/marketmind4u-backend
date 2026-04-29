@@ -1,35 +1,35 @@
-const crypto = require("crypto");
+const Payment=require("../models/Payment");
 
-exports.razorpayWebhook = async (req,res)=>{
-  try{
-  
-  console.log("Webhook Payload:", req.body);
-  
-  const event = req.body;
-  
-  if(event.event==="payment_link.paid"){
-     console.log("Customer payment success");
-  }
-  
-  if(event.event==="payment_link.failed"){
-     console.log("Payment failed");
-  }
-  
-  if(event.event==="payment_link.cancelled"){
-     console.log("Payment cancelled");
-  }
-  
-  return res.status(200).json({
-   success:true,
-   paymentReceived:true,
-   event:event.event,
-   data:event.payload
-  });
-  
-  }catch(err){
-   console.log(err);
-   return res.status(500).json({
-     success:false
-   });
-  }
-  };
+exports.checkPaymentStatus=async(req,res)=>{
+try{
+
+const { customerId } = req.body;
+
+if(!customerId){
+ return res.status(400).json({
+   success:false,
+   message:"customerId required"
+ });
+}
+
+const payments=
+await Payment.find({
+ user:customerId
+})
+.populate("user subscription")
+.sort({createdAt:-1});
+
+
+return res.json({
+ success:true,
+ totalPayments:payments.length,
+ data:payments
+});
+
+}catch(err){
+console.log(err);
+return res.status(500).json({
+success:false
+});
+}
+};

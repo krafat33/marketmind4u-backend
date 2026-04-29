@@ -2,12 +2,12 @@ const express = require("express");
 const router = express.Router();
 
 const {
- razorpayWebhook
+ checkPaymentStatus
 } = require("../controllers/webhook.controller.js");
 
 router.post(
-    "/razorpay",
+    "/payment-status",
     express.json(),
-    razorpayWebhook
+    checkPaymentStatus
    );
 module.exports = router;
