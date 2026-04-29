@@ -1,43 +1,35 @@
 const crypto = require("crypto");
 
-exports.verifyWebhookSignature=(req,res,next)=>{
+exports.razorpayWebhook = async (req,res)=>{
   try{
   
-  const secret=process.env.RAZORPAY_WEBHOOK_SECRET;
+  console.log("Webhook Payload:", req.body);
   
-  const signature =
-  req.headers["x-razorpay-signature"];
+  const event = req.body;
   
-  if(!signature){
-   return res.status(400).json({
-     success:false,
-     message:"Signature missing"
-   });
+  if(event.event==="payment_link.paid"){
+     console.log("Customer payment success");
   }
   
-  const expectedSignature=
-  crypto
-  .createHmac("sha256", secret)
-  .update(req.body) // raw buffer
-  .digest("hex");
-  
-  if(signature !== expectedSignature){
-   return res.status(400).json({
-    success:false,
-    message:"Invalid signature"
-   });
+  if(event.event==="payment_link.failed"){
+     console.log("Payment failed");
   }
   
-  req.webhookBody=
-  JSON.parse(req.body.toString());
+  if(event.event==="payment_link.cancelled"){
+     console.log("Payment cancelled");
+  }
   
-  next();
+  return res.status(200).json({
+   success:true,
+   paymentReceived:true,
+   event:event.event,
+   data:event.payload
+  });
   
   }catch(err){
-  console.log(err);
-  return res.status(500).json({
-  success:false,
-  message:"Verification failed"
-  });
+   console.log(err);
+   return res.status(500).json({
+     success:false
+   });
   }
   };
