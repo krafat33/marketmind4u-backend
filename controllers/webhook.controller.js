@@ -8,9 +8,8 @@ const { customerId } = req.body;
 
 let user;
 
-
 // if Mongo ObjectId passed
-if(customerId.length===24){
+if(customerId.length ===24){
  user = await User.findById(customerId);
 }else{
  // if userCode passed
