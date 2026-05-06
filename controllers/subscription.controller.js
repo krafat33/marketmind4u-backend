@@ -32,9 +32,6 @@ const createSubscription = async (req, res) => {
     const plan = await Package.findOne({ name: planName });
     if (!plan) return res.status(400).json({ success: false, message: "Invalid plan" });
 
-   
-
-    // GST
     const gstAmount = Math.round((amount * gstRate) / 100);
     const totalAmount = amount + gstAmount;
 
@@ -109,12 +106,9 @@ const createSubscription = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-/* ======================================================
-   GET MY SUBSCRIPTION
-====================================================== */
 const getMySubscription = async (req, res) => {
   try {
-    const { userId } = req.params; // 👈 URL se
+    const { userId } = req.params; 
 
     if (!userId) {
       return res.status(400).json({
@@ -208,7 +202,7 @@ const payNow = async (req, res) => {
           subscriptionId: sub._id.toString(),
           paymentType: "FULL"
         },
-        callback_url: "https://marketmind4u-backend.onrender.com/api/payment/callback",
+       callback_url: "https://marketmind4u-backend.onrender.com/api/payment/callback",
        callback_method: "get"
       });
 
@@ -231,10 +225,7 @@ const payNow = async (req, res) => {
         payableAmount
       });
     }
-
-    /* ===============================
-       PARTIAL PAYMENT
-    =============================== */
+    
     if (paymentType === "PARTIAL") {
 
       const nextEmi = sub.emiSchedule.find(e => !e.isPaid);

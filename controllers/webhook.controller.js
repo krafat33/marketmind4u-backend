@@ -1,21 +1,20 @@
 const Payment=require("../models/Payment");
 const User=require("../models/User");
 
-exports.checkPaymentStatus=async(req,res)=>{
+exports.checkPaymentStatus = async(req,res)=>{
 try{
 
 const { customerId } = req.body;
 
 let user;
 
-// if Mongo ObjectId passed
 if(customerId.length ===24){
- user = await User.findById(customerId);
+  user = await User.findOne({
+    userCode:customerId
+  });
 }else{
+  user = await User.findById(customerId);
  // if userCode passed
- user = await User.findOne({
-   userCode:customerId
- });
 }
 
 if(!user){
