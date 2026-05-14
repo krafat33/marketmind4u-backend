@@ -2,32 +2,21 @@ const mongoose = require("mongoose");
 
 const SubscriptionSchema = new mongoose.Schema(
   {
-    /* ===============================
-       USER
-    =============================== */
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true
     },
-
-    /* ===============================
-       PLAN
-    =============================== */
     plan: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Package", 
       required: true
     },
-
     planName: {
       type: String,
       required: true
     },
-    /* ===============================
-       AMOUNTS
-    =============================== */
     totalAmount: {
       type: Number,
       required: true,
@@ -44,10 +33,6 @@ const SubscriptionSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
-
-    /* ===============================
-       PAYMENTS
-    =============================== */
     payments: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -81,9 +66,6 @@ const SubscriptionSchema = new mongoose.Schema(
         }
       }
     ],
-    /* ===============================
-       RAZORPAY (AUTO-DEBIT)
-    =============================== */
     razorpaySubscriptionId: {
       type: String,
       default: null
@@ -97,10 +79,6 @@ const SubscriptionSchema = new mongoose.Schema(
       enum: ["PENDING", "ACTIVE", "FAILED"],
       default: "PENDING"
     },
-     
-    /* ===============================
-       STATUS
-    =============================== */
     status: {
       type: String,
       enum: [
@@ -112,10 +90,6 @@ const SubscriptionSchema = new mongoose.Schema(
       ],
       default: "PENDING"
     },
-
-    /* ===============================
-       DATES
-    =============================== */
     startDate: {
       type: Date,
       default: null
@@ -130,10 +104,6 @@ const SubscriptionSchema = new mongoose.Schema(
     timestamps: true
   }
 );
-
-/* ===============================
-   AUTO CALCULATE REMAINING
-=============================== */
 SubscriptionSchema.pre("save", function (next) {
   this.remainingAmount = Math.max(
     this.totalAmount - this.paidAmount,
@@ -141,5 +111,4 @@ SubscriptionSchema.pre("save", function (next) {
   );
   next();
 });
-
 module.exports = mongoose.model("Subscription", SubscriptionSchema);
